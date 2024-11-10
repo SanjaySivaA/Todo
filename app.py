@@ -5,10 +5,30 @@ app = Flask(__name__)
 
 def initialise_database():
     c = sqlite3.connect('todo.db')
-    c.execute('CREATE TABLE IF NOT EXISTS tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, task TEXT, status TEXT DEFAULT "Pending")')
+    c.execute('CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, email TEXT, hashed_password TEXT)')
+    c.execute('CREATE TABLE IF NOT EXISTS tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, task TEXT, status TEXT DEFAULT "Pending", user_id)')
     c.close()
 
 initialise_database()
+
+@app.route('/user-reg', methods=['POST','GET'])
+def user_registration():
+    username = request.form['username']
+    email = request.form['email']
+    password = (request.form['password']).encode('utf-8')
+    hashed_password = None
+
+    with sqlite3.connect('todo.db') as c:
+        cur = c.cursor()
+        cur.execute('INSERT INTO users (username, email, hashed_password) VALUES (?, ?, ?)', (username, email, hashed_password))
+        c.commit()
+        resp = "User registration successful"
+    return jsonify({"response" : resp})
+
+@app.route('/user-login', methods=['POST', 'GET'])
+def user_login():
+    email = request.form['email']
+    password = request.form['password']
 
 @app.route('/add-task', methods=['POST', 'GET'])
 def add_task():
@@ -46,7 +66,7 @@ def update_task():
             c.commit()
             resp = "Task data updated"
         return jsonify({"response" : resp})
-
+    
 
 if __name__ == '__main__' :
     app.run(debug=True)
